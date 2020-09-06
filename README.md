@@ -34,11 +34,13 @@ Big thanks to the creators of these libraries!
 ## Examples
 
 ### Clock and data pin
-The Arduino communicates with the WS2801 pixels through a synchronous serial interface. This interface consists of a clock wire and a data wire. The corresponding pins of the Arduino must be defined and passed to the ```Wordclock::begin()``` function.
+The Arduino communicates with the WS2801 pixels through a synchronous serial interface. This interface consists of a clock wire and a data wire.
+The corresponding pins of the Arduino must be defined and passed to the ```Wordclock::begin()``` function.
 
 ### Defining the clockface
 Each word of the word clock is defined by an array of pixels and the number of pixels in the array. The array 'pixels' contains the addresses of the WS2801 pixels. 
-```struct clock_word {
+```
+struct clock_word {
   uint8_t num_pixels;
   uint8_t pixels[MAX_LEDS_PER_WORD];
 }
@@ -68,6 +70,7 @@ The wordclock library is defined to have a maximum of 2 LED pixels per word. The
 ### Mode settings
 The mode of the clock can be set by:
 ```w_clock.setMode(Wordclock::MODE_RAINBOW_EACH_WORD_BOUNDED);```
+
 Possible modes are: ```MODE_RAINBOW, MODE_FIXED, MODE_RAINBOW_EACH_WORD, MODE_RAINBOW_BOUNDED, MODE_RAINBOW_EACH_WORD_BOUNDED```
 
 The parameters of the modes can be adapted.
