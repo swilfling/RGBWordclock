@@ -184,58 +184,6 @@ void Wordclock::pixelTest(uint32_t test_delay)
   }
 }
 
-/*
- * This function updates the displayed time of the clockface. All words are shown
- * in the same color.
- * @param cur_hour: Current hour
- * @param cur_min: Current minute
- * @param cur_color: Color of words
-*/
-void Wordclock::updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color)
-{     
-  switchAllPixelsOff();
-  
-  setWord(clock_words.w_itis,cur_color);
-  
-  // five, ten, quarter, twenty, half    
-  if(cur_min < 5)
-      setWord(clock_words.w_o_clock,cur_color);
-  if ((cur_min >= 5 && cur_min < 10) || (cur_min >= 55 && cur_min <= 59))
-      setWord(clock_words.w_five,cur_color);
-  if ((cur_min >= 10 && cur_min < 15) || (cur_min >= 50 && cur_min < 55))
-      setWord(clock_words.w_ten,cur_color);
-  if ((cur_min >= 15 && cur_min < 20) ||(cur_min >= 45 && cur_min < 50))
-    setWord(clock_words.w_quarter,cur_color);
-  if ((cur_min >= 20 && cur_min < 25) || (cur_min >= 40 && cur_min < 45))
-    setWord(clock_words.w_twenty,cur_color);
-  if ((cur_min >= 25 && cur_min < 30) || (cur_min >= 35 && cur_min < 40))
-  {
-    setWord(clock_words.w_twenty,cur_color);
-    setWord(clock_words.w_five,cur_color);
-  }
-  if(cur_min >= 30 && cur_min < 35)     
-    setWord(clock_words.w_half,cur_color);    
-  
-  // Minutes?
-  if((cur_min >= 5 && cur_min < 15) || (cur_min >= 20 && cur_min < 30) 
-    || (cur_min >= 35 && cur_min < 45) || (cur_min >= 50 && cur_min <= 59))    
-    setWord(clock_words.w_minutes,cur_color);
-  
-  uint8_t hour_to_show = cur_hour;
-  // Past or to?
-  if (cur_min >= 35 && cur_min <= 59)
-  {
-    hour_to_show++;
-    setWord(clock_words.w_to,cur_color);
-  }
-  else if(cur_min >= 5 && cur_min < 35)
-    setWord(clock_words.w_past,cur_color);
-  
-  // Set hour
-  hour_to_show = hour_to_show % 12;
-  setWord(clock_words.hours[hour_to_show],cur_color);
-  pixels.show();
-}
 
 /*
  * This function updates the displayed time of the clockface. The words are shown in different
@@ -243,22 +191,20 @@ void Wordclock::updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color)
  * @param cur_hour: Current hour
  * @param cur_min: Current minute
  * @param cur_color: Color of first word
- * @param num_steps_update: This parameter defines the number of steps in which the rainbow is split up.
 */
-void Wordclock::updateTimeAndColor(uint8_t cur_hour, uint8_t cur_min, Color& cur_color, uint8_t num_steps_update)
+void Wordclock::updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color)
 {
-  Color new_color;
-  new_color.r = cur_color.r;
-  new_color.g = cur_color.g;
-  new_color.b = cur_color.b;
-  
   switchAllPixelsOff();
+  
+  Color new_color = cur_color;
   
   setWord(clock_words.w_itis,cur_color);
 
   if(cur_min >= 5)
-    updateHue(new_color,num_steps_update);
-  
+  {
+    if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      updateHue(new_color,num_steps_rainbow_per_word);
+  }
   // Check to set words 'five', 'ten', 'quarter', 'twenty', 'twenty-five', 'half'
   if ((cur_min >= 5 && cur_min < 10) || (cur_min >= 55 && cur_min <= 59))
     setWord(clock_words.w_five,new_color);
@@ -277,7 +223,8 @@ void Wordclock::updateTimeAndColor(uint8_t cur_hour, uint8_t cur_min, Color& cur
   if((cur_min >= 5 && cur_min < 15) || (cur_min >= 20 && cur_min < 30) 
     || (cur_min >= 35 && cur_min < 45) || (cur_min >= 50 && cur_min <= 59))    
   {
-    updateHue(new_color,num_steps_update);
+    if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      updateHue(new_color,num_steps_rainbow_per_word);
     setWord(clock_words.w_minutes,new_color);
   }
   
@@ -286,25 +233,28 @@ void Wordclock::updateTimeAndColor(uint8_t cur_hour, uint8_t cur_min, Color& cur
   if (cur_min >= 35 && cur_min <= 59)
   {
     hour_to_show++;  
-    updateHue(new_color,num_steps_update);
+    if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      updateHue(new_color,num_steps_rainbow_per_word);
     setWord(clock_words.w_to,new_color);
   }
   else if(cur_min >= 5 && cur_min < 35)
   {
-    updateHue(new_color,num_steps_update);
+    if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      updateHue(new_color,num_steps_rainbow_per_word);
     setWord(clock_words.w_past,new_color);
   }  
   
   // Update hue and set hour
-  updateHue(new_color,num_steps_update);
+  if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      updateHue(new_color,num_steps_rainbow_per_word);
   hour_to_show = hour_to_show % 12;
   setWord(clock_words.hours[hour_to_show],new_color);
   
   // Set word 'o'clock'?
   if(cur_min < 5)
-  {
-    updateHue(new_color,num_steps_update);
-    setWord(clock_words.w_o_clock,new_color);
+  {  
+    if(mode == MODE_RAINBOW_EACH_WORD || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+      setWord(clock_words.w_o_clock,new_color);
   }
   pixels.show();
 }
@@ -450,27 +400,16 @@ void Wordclock::updateWordClock(uint8_t cur_hour, uint8_t cur_minute)
   if(cur_hour < 24 && cur_minute < 60)
   {
     // Check wordclock modes
-    if(mode == Wordclock::MODE_RAINBOW)
+    if(mode == Wordclock::MODE_RAINBOW || mode == MODE_RAINBOW_EACH_WORD)
     {
       updateHue(cur_color, num_steps_rainbow);
       updateTime(cur_hour, cur_minute, cur_color);
     }
-    else if(mode == Wordclock::MODE_RAINBOW_BOUNDED)
+    else if(mode == Wordclock::MODE_RAINBOW_BOUNDED || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
     {
       updateHueBounded(cur_color, num_steps_rainbow, rainbow_hue_min, rainbow_hue_max);
       updateTime(cur_hour,cur_minute, cur_color);
-    }
-    else if(mode == Wordclock::MODE_RAINBOW_EACH_WORD)
-    {
-      updateHue(cur_color, num_steps_rainbow);
-      updateTimeAndColor(cur_hour,cur_minute,cur_color,num_steps_rainbow_per_word);
-    }
-    else if(mode == Wordclock::MODE_RAINBOW_EACH_WORD_BOUNDED)
-    {
-      updateHueBounded(cur_color, num_steps_rainbow, rainbow_hue_min, rainbow_hue_max);
-      updateTimeAndColor(cur_hour,cur_minute,cur_color,num_steps_rainbow_per_word);
-    }
-    else // Fixed Color mode
+    } else // Fixed Color mode
        updateTime(cur_hour, cur_minute, cur_color);    
   }
 }

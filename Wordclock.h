@@ -276,22 +276,12 @@ class Wordclock
 
     /*
        This function updates the displayed time of the clockface. All words are shown
-       in the same color.
+       in the same color or in different colors depending on the mode.
        @param cur_hour: Current hour
        @param cur_min: Current minute
        @param cur_color: Color of words
     */
     void updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color);
-
-    /*
-       This function updates the displayed time of the clockface. The words are shown in different
-       colors based on the rainbow. The hue changed for each word by a factor based on num_steps_update.
-       @param cur_hour: Current hour
-       @param cur_min: Current minute
-       @param cur_color: Color of first word
-       @param num_steps_update: This parameter defines the number of steps in which the rainbow is split up.
-    */
-    void updateTimeAndColor(uint8_t cur_hour, uint8_t cur_min, Color& cur_color, uint8_t num_steps_update);
     
 };
 #endif
