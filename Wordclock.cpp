@@ -1,5 +1,5 @@
 /*
-   Wordclock.h - Wordclock library
+   Wordclock.cpp - Wordclock library
 
    This Arduino library is set to control a RGB  LED wordclock. The clock is defined to work in
    5-minute steps, time format is 0-12h. The clock uses a DS3231 RTC module for time measurement and
@@ -46,6 +46,8 @@ void Wordclock::begin(uint8_t num_pixels, uint8_t cpin, uint8_t dpin, struct clo
   this->clock_words = words;
   pixels = Adafruit_WS2801(num_pixels,dpin,cpin);
   pixels.begin();
+  rtc_wrapper.begin();
+  //rtc_wrapper.setCurrentTime();
 }
 
 /* This function deactivates all pixels. The clockface must then be updated by updateClockFace()  */
@@ -123,9 +125,8 @@ void Wordclock::setSetOfPixels(uint8_t *pixel_numbers,uint8_t num_pixels_to_set,
 /*
  * This function calls a selftest by setting all pixels to red, then green, then blue color. 
  * The delay between the color switches can be set by the param test_delay.
- * @param test_delay: Delay in microseconds
 */
-void Wordclock::RGB_selftest(uint32_t test_delay)
+void Wordclock::RGB_selftest()
 {
   // Test 1: All Pixels RED
   setAllPixelsToColor(10,0,0);
@@ -146,9 +147,8 @@ void Wordclock::RGB_selftest(uint32_t test_delay)
 /*
  * This function tests the fucntionality of the clockface.
  * The function iterates through all possible time values and sets the clockface accordingly.
- * @param delay: delay between time steps
  */
-void Wordclock::TimeTest(uint32_t test_delay)
+void Wordclock::TimeTest()
 {
   Color cur_color = {255,0,0};
   uint32_t cur_hour = 0, cur_min = 0;
@@ -166,9 +166,8 @@ void Wordclock::TimeTest(uint32_t test_delay)
  * This function tests the functionality of each pixel.
  * The function iterates through all pixels of the word clock and sets each pixel 
  * to a red color for a time. 
- * @param test_delay: delay in microseconds
  */
-void Wordclock::pixelTest(uint32_t test_delay)
+void Wordclock::pixelTest()
 {
   // Test 4: Loop through all pixels of the word clock - NOT IN ORDER OF WORDS!
   int j = 0;
@@ -267,8 +266,7 @@ void Wordclock::updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color)
  *  => hue = 0.66: blue color
  *  => hue = 1: red color
  * @param cur_min: Current color
- * @param num_color_steps: This parameter defines the number of steps that are needed 
- *  to go from hue 0 to hue 1
+ * @param num_color_steps: This parameter defines the number of different colors
 */
 void Wordclock::updateHue(Color& cur_color, double num_color_steps)
 {
@@ -298,8 +296,7 @@ void Wordclock::updateHue(Color& cur_color, double num_color_steps)
  * With this function, the clock can be set to switch color e.g. between red and green. The static members of the 
  * Color class can be used in this function.
  * @param cur_min: Current color
- * @param num_color_steps: This parameter defines the number of steps that are needed 
- *  to go from hue 0 to hue 1
+ * @param num_color_steps: This parameter defines the number of different colors
  * @param hue_min: Minimum hue value, e.g. HUE_RED, HUE_GREEN, HUE_BLUE or a floating point value
  * @param hue_max: Maximum hue value, e.g. HUE_GRREN, HUE_BLUE, HUE_RED_MAX or a floating point value
 */
@@ -310,31 +307,61 @@ void Wordclock::updateHueBounded(Color& cur_color, double num_color_steps, doubl
   // Convert RGB to HSV
   conv.rgbToHsv(cur_color.r, cur_color.g, cur_color.b, hsv_value);
   // Calculate factor to increase hue
-  double step_factor = 1.0/num_color_steps;
+  double step_factor = (hue_max - hue_min)/num_color_steps;
   
   double hue = hsv_value[0];
-  // Check bounds of hue - select whether to increase or decrease hue
-  if(hue + step_factor >= hue_max)
+  if(hue_min < hue_max)
   {
-    // Hue must be decreased
-    color_rotation_factor = -1; 
+    // Check bounds of hue - select whether to increase or decrease hue
+    if(hue + step_factor >= hue_max)
+      color_rotation_factor = -1; 
+    else if(hue - step_factor <= hue_min)
+      color_rotation_factor = 1;
+        
+    // Increase/Decrease Hue
+    hue += (color_rotation_factor * step_factor);
   }
-  else if(hue - step_factor <= hue_min)
+  else // if hue min and max are switched, bounds are different
   {
-    // Hue must be increased
-    color_rotation_factor = 1;
+    if(hue + step_factor >= hue_max && hue + step_factor <= hue_min)
+      color_rotation_factor = -1;
+    else if(hue - step_factor <= hue_min && hue - step_factor >= hue_max)
+      color_rotation_factor = 1;
+        
+    // Increase/Decrease Hue
+    hue += (color_rotation_factor * step_factor);
+    // Check if hue < 0
+    if(hue <= 0)
+      hue = hue + 1;
+    else if(hue >= 1)
+      hue = hue - 1;
   }
-  Serial.println("Color rotation:");
-  Serial.println(color_rotation_factor);  
-  // Increase/Decrease Hue
-  hue += (color_rotation_factor * step_factor);
-  
+
   uint8_t rgb_value[3];
   // Convert back to RGB
   conv.hsvToRgb(hue, hsv_value[1], hsv_value[2], rgb_value); 
   cur_color.r = rgb_value[0];
   cur_color.g = rgb_value[1];
   cur_color.b = rgb_value[2];
+}
+
+
+/*
+ * This function sets the update delay of the clock.
+ * @param update_delay: delay in ms
+ */
+void Wordclock::setUpdateDelay(uint32_t update_delay)
+{
+  this->update_delay = update_delay;
+}
+
+/*
+ * This function sets the test delay of the clock.
+ * @param test_delay: delay in ms
+ */
+void Wordclock::setTestDelay(uint32_t test_delay)
+{
+  this->test_delay = test_delay;
 }
 
 /*
@@ -412,4 +439,33 @@ void Wordclock::updateWordClock(uint8_t cur_hour, uint8_t cur_minute)
     } else // Fixed Color mode
        updateTime(cur_hour, cur_minute, cur_color);    
   }
+  delay(update_delay);
+}
+/*
+   This function updates the wordclock. The mode of the clock must be set beforehand with the function setMode.
+*/
+void Wordclock::updateWordClock()
+{
+  DateTime cur_time = rtc_wrapper.now();
+  rtc_wrapper.print_time();
+  
+  uint8_t cur_minute = cur_time.minute();
+  uint8_t cur_hour = cur_time.hour();
+  // Check time for errors
+  if(cur_hour < 24 && cur_minute < 60)
+  {
+    // Check wordclock modes
+    if(mode == Wordclock::MODE_RAINBOW || mode == MODE_RAINBOW_EACH_WORD)
+    {
+      updateHue(cur_color, num_steps_rainbow);
+      updateTime(cur_hour, cur_minute, cur_color);
+    }
+    else if(mode == Wordclock::MODE_RAINBOW_BOUNDED || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
+    {
+      updateHueBounded(cur_color, num_steps_rainbow, rainbow_hue_min, rainbow_hue_max);
+      updateTime(cur_hour,cur_minute, cur_color);
+    } else // Fixed Color mode
+       updateTime(cur_hour, cur_minute, cur_color);    
+  }
+  delay(update_delay);
 }

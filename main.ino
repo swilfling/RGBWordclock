@@ -1,5 +1,5 @@
 /*
-   Wordclock.h - Wordclock library
+   main.ino - Wordclock library
 
    This Arduino library is set to control a RGB  LED wordclock. The clock is defined to work in
    5-minute steps, time format is 0-12h. The clock uses a DS3231 RTC module for time measurement and
@@ -28,46 +28,10 @@
 
 */
 
-#include <Adafruit_WS2801.h>
 #include <avr/io.h>
-#include <RTClib.h>
-#include "./Wordclock.h"
-
-// Comment this line to suppress debug output
-//#define DEBUG_SERIAL
+#include "Wordclock.h"
 
 Wordclock w_clock;  
-DS3231 rtc;
-
-/*
- * Helper function: Print time through serial
- * @param now: DateTime struct cotaining current time
- */
-void print_time(DateTime& now)
-{
-    Serial.print("Current Time: ");
-    Serial.print(now.hour());
-    Serial.print(":");
-    Serial.print(now.minute());
-    Serial.print(":");
-    Serial.println(now.second());
-}
-
-/*
- * Helper function: Setup DS3231
- * Call this in setup ()
- */
-void setup_DS3231(DS3231& rtc)
-{
-  // Setup: Start DS3231
-  rtc.begin();
- // rtc.adjust(DateTime(__DATE__, __TIME__));
-  // Optional - Set clock to compile time - Only use this when in connection with Arduino
-  if (!rtc.isrunning()) {
-    Serial.println("RTC is NOT running!");
-    rtc.adjust(DateTime(__DATE__, __TIME__));
-  }
-}
 
 // Define clockface
 struct clockface clock_words = {
@@ -99,50 +63,32 @@ struct clockface clock_words = {
                 {   1,                   {5}    }   //ELEVEN
    }
 };
-void setup() {
-  #ifdef DEBUG_SERIAL
-    Serial.begin(9600);
-  #endif
-  
+void setup() {  
   // Setup: Start Wordclock, selftest 
   uint8_t dpin = 13;
   uint8_t cpin = 12;
   uint8_t num_pixels = 26;  
 
+  // Init wordclock
   w_clock.begin(num_pixels, cpin, dpin, clock_words);
-
+  
   // Wordclock Selftests
-  uint32_t test_delay = 1000;
-  w_clock.RGB_selftest(test_delay);
-  //w_clock.pixelTest(test_delay);
-  //w_clock.TimeTest(test_delay);
-
-  // Setup RTC
-  setup_DS3231(rtc); 
-  
-  #ifdef DEBUG_SERIAL
-    DateTime cur_time = rtc.now(); 
-    print_time(cur_time);
-  #endif
-}
-
-void loop() {
-  // Get time from RTC
-  DateTime curtime = rtc.now();
- 
-  // Debug Output
-  #ifdef DEBUG_SERIAL
-    print_time(curtime);
-  #endif
-  
-  uint8_t cur_minute = curtime.minute();
-  uint8_t cur_hour = curtime.hour();
+  w_clock.setTestDelay(1000);
+  w_clock.RGB_selftest();
+  //w_clock.pixelTest();
+  //w_clock.TimeTest();
   
   // Set mode
+  w_clock.setUpdateDelay(1000);
   w_clock.setMode(Wordclock::MODE_RAINBOW_EACH_WORD_BOUNDED);
-  w_clock.setRainbowHueMin(Color::HUE_RED_MIN);
+  // Set parameters
+  w_clock.setNumberOfRainbowSteps(30);
+  w_clock.setRainbowHueMin(Color::HUE_BLUE);
   w_clock.setRainbowHueMax(Color::HUE_GREEN);
+}  
+
+void loop() {
+  
   // Update Wordclock
-  w_clock.updateWordClock(cur_hour,cur_minute);
-  delay(1000);
+  w_clock.updateWordClock();
 }

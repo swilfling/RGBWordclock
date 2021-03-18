@@ -32,6 +32,7 @@
 #define H_WORDCLOCK_H
 
 #include <Adafruit_WS2801.h>
+#include "RTCWrapper.h"
 
 /************************ Data structure definitions ***********************************/
 
@@ -103,8 +104,14 @@ class Wordclock
     // Adafruit Pixel Array
     Adafruit_WS2801 pixels;
     uint8_t num_pixels = 26;
+    // RTC Wrapper
+    RTCWrapper rtc_wrapper;
     // Clockface structure
     struct clockface clock_words;
+
+    // Delays
+    uint32_t update_delay = 1000;
+    uint32_t test_delay = 1000;
 
     // Color modes - Data
     Color cur_color = {150,30,0}; 
@@ -142,9 +149,26 @@ class Wordclock
        @param cur_min: Current minute
     */
     void updateWordClock(uint8_t cur_hour, uint8_t cur_min);
+    /*
+       This function updates the wordclock. The mode of the clock must be set beforehand with the function setMode.
+    */
+    void updateWordClock();
 
     /************************************ Configuration functions ************************************/
+
+    /*
+     * This function sets the test delay of the clock
+     * @param test_delay: delay in ms
+     */
+    void setTestDelay(uint32_t test_delay);
+
     
+    /*
+     * This function sets the update delay of the clock.
+     * @param update_delay: delay in ms
+     */
+    void setUpdateDelay(uint32_t update_delay);
+
     /*
      * This function sets the mode of the clock.
      * @param mode: mode definition 
@@ -181,28 +205,28 @@ class Wordclock
     /*
        This function calls a selftest by setting all pixels to red, then green, then blue color.
        The delay between the color switches can be set by the param test_delay.
-       @param test_delay: Delay in microseconds
     */
-    void RGB_selftest(uint32_t test_delay);
+    void RGB_selftest();
 
     /*
        This function tests the functionality of each pixel.
        The function iterates through all pixels of the word clock and sets each pixel
        to a red color for a time.
-       @param test_delay: delay in microseconds
     */
-    void pixelTest(uint32_t test_delay);
+    void pixelTest();
 
     /*
        This function tests the fucntionality of the time display on the clockface.
        The function iterates through all possible time values and sets the clockface accordingly.
-       @param delay: delay between time steps
     */
-    void TimeTest(uint32_t test_delay);
+    void TimeTest();
+  
+    /*
+     * 
+     */
 
   /********************************** HELPER FUNCTIONS - NOT PUBLIC ******************************************/
   private:
-  
     /********************************** Pixel configuration functions ****************************************/
 
     /*  This function sends the current clockface configuration to the clock.*/
@@ -281,7 +305,6 @@ class Wordclock
        @param cur_min: Current minute
        @param cur_color: Color of words
     */
-    void updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color);
-    
+    void updateTime(uint8_t cur_hour, uint8_t cur_min, Color& cur_color);    
 };
 #endif
