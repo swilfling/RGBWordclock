@@ -83,12 +83,7 @@ void Wordclock::setAllPixelsToColor(uint8_t r, uint8_t g, uint8_t b)
  */
 void Wordclock::setWord(struct clock_word& word_to_set, uint8_t r, uint8_t g, uint8_t b)
 {
-  int i = 0;
-  for (i=0;i<word_to_set.num_pixels;i++)
-  {
-    uint8_t current_pixel = word_to_set.pixels[i];
-    pixels.setPixelColor(current_pixel, r, g, b);
-  }
+  setSetOfPixels(word_to_set.pixels, word_to_set.num_pixels, r, g, b);
 }
 
 /*
@@ -98,12 +93,7 @@ void Wordclock::setWord(struct clock_word& word_to_set, uint8_t r, uint8_t g, ui
  */
 void Wordclock::setWord(struct clock_word& word_to_set, struct Color& cur_color)
 {
-  int i = 0;
-  for (i=0;i<word_to_set.num_pixels;i++)
-  {
-    uint8_t current_pixel = word_to_set.pixels[i];
-    pixels.setPixelColor(current_pixel, cur_color.r, cur_color.g, cur_color.b);
-  }
+  setSetOfPixels(word_to_set.pixels, word_to_set.num_pixels, cur_color.r, cur_color.g, cur_color.b);
 }
 
 /*
@@ -372,6 +362,8 @@ void Wordclock::setMode(uint8_t mode)
 {
   if(mode <= MODE_RAINBOW_EACH_WORD_BOUNDED && mode >= MODE_FIXED)
     this->mode = mode;
+  else 
+    this->mode = MODE_FIXED;  
 }
 
 /* Set number of color steps in rainbow. Used in all rainbow modes. 
@@ -389,6 +381,8 @@ void Wordclock::setRainbowHueMin(double hue_min)
 {
   if( abs(hue_min) <= 1)
     rainbow_hue_min = hue_min;
+  else 
+    rainbow_hue_max = hue_min > 0 ? 1 : -1 ;
 }
 
 /* Set maximum hue for rainbow clock . Used in modes RAINBOW_BOUNDED and RAINBOW_EACH_WORD_BOUNDED.
@@ -398,6 +392,8 @@ void Wordclock::setRainbowHueMax(double hue_max)
 {
   if( abs(hue_max) <= 1)
     rainbow_hue_max = hue_max;
+  else 
+    rainbow_hue_max = hue_max > 0 ? 1 : -1 ;
 }
 
 /* Set number of color steps in rainbow for different words. Used modes RAINBOW_EACH_WORD and RAINBOW_EACH_WORD_BOUNDED.
@@ -421,23 +417,18 @@ void Wordclock::setColor(Color& color)
    @param cur_hour: Current hour
    @param cur_min: Current minute
 */
-void Wordclock::updateWordClock(uint8_t cur_hour, uint8_t cur_minute)
+void Wordclock::updateWordClockTime(uint8_t cur_hour, uint8_t cur_minute)
 {
   // Check time for errors
   if(cur_hour < 24 && cur_minute < 60)
   {
     // Check wordclock modes
     if(mode == Wordclock::MODE_RAINBOW || mode == MODE_RAINBOW_EACH_WORD)
-    {
       updateHue(cur_color, num_steps_rainbow);
-      updateTime(cur_hour, cur_minute, cur_color);
-    }
     else if(mode == Wordclock::MODE_RAINBOW_BOUNDED || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
-    {
       updateHueBounded(cur_color, num_steps_rainbow, rainbow_hue_min, rainbow_hue_max);
-      updateTime(cur_hour,cur_minute, cur_color);
-    } else // Fixed Color mode
-       updateTime(cur_hour, cur_minute, cur_color);    
+  
+    updateTime(cur_hour, cur_minute, cur_color);    
   }
   delay(update_delay);
 }
@@ -451,21 +442,5 @@ void Wordclock::updateWordClock()
   
   uint8_t cur_minute = cur_time.minute();
   uint8_t cur_hour = cur_time.hour();
-  // Check time for errors
-  if(cur_hour < 24 && cur_minute < 60)
-  {
-    // Check wordclock modes
-    if(mode == Wordclock::MODE_RAINBOW || mode == MODE_RAINBOW_EACH_WORD)
-    {
-      updateHue(cur_color, num_steps_rainbow);
-      updateTime(cur_hour, cur_minute, cur_color);
-    }
-    else if(mode == Wordclock::MODE_RAINBOW_BOUNDED || mode == MODE_RAINBOW_EACH_WORD_BOUNDED)
-    {
-      updateHueBounded(cur_color, num_steps_rainbow, rainbow_hue_min, rainbow_hue_max);
-      updateTime(cur_hour,cur_minute, cur_color);
-    } else // Fixed Color mode
-       updateTime(cur_hour, cur_minute, cur_color);    
-  }
-  delay(update_delay);
+  updateWordClockTime(cur_hour, cur_minute);
 }

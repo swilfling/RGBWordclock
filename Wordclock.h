@@ -148,7 +148,7 @@ class Wordclock
        @param cur_hour: Current hour
        @param cur_min: Current minute
     */
-    void updateWordClock(uint8_t cur_hour, uint8_t cur_min);
+    void updateWordClockTime(uint8_t cur_hour, uint8_t cur_min);
     /*
        This function updates the wordclock. The mode of the clock must be set beforehand with the function setMode.
     */
