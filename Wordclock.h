@@ -23,8 +23,7 @@
    Big thanks to the creators of these libraries!
 
    Sandra Wilfling
-   Github:
-   Instructables:
+   Github: https://github.com/swilfling
 
 */
 
@@ -46,12 +45,11 @@ struct Color
   uint8_t g;
   uint8_t b;
   // HSV definitions
-  static constexpr double HUE_RED_MIN = 0.0;
-  static constexpr double HUE_RED_MAX = 1.0;
-  static constexpr double HUE_GREEN = 0.333;
-  static constexpr double HUE_BLUE = 0.666;
+  static const double HUE_RED_MIN = 0.0;
+  static const double HUE_RED_MAX = 1.0;
+  static const double HUE_GREEN = 0.333;
+  static const double HUE_BLUE = 0.666;
 
-  // Constructors/Destructors
   Color(uint8_t r, uint8_t g, uint8_t b) : r(r), g(g), b(b) {}
   Color() {}
   Color(Color& ref_color) : r(ref_color.r), g(ref_color.g), b(ref_color.b) {}
@@ -125,11 +123,11 @@ class Wordclock
     
   public:
     /*************************** Mode definitions *************************************/
-    static constexpr uint8_t MODE_FIXED = 0;
-    static constexpr uint8_t MODE_RAINBOW = 1;
-    static constexpr uint8_t MODE_RAINBOW_BOUNDED = 2;
-    static constexpr uint8_t MODE_RAINBOW_EACH_WORD = 3;
-    static constexpr uint8_t MODE_RAINBOW_EACH_WORD_BOUNDED = 4;
+    static const uint8_t MODE_FIXED = 0;
+    static const uint8_t MODE_RAINBOW = 1;
+    static const uint8_t MODE_RAINBOW_BOUNDED = 2;
+    static const uint8_t MODE_RAINBOW_EACH_WORD = 3;
+    static const uint8_t MODE_RAINBOW_EACH_WORD_BOUNDED = 4;
     
     /**************************** Initialization **************************************/
     Wordclock() {}
